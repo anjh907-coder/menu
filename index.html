@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 하루는 어땠나요? | AI 감성 일기</title>
+    
+    <!-- 구글 폰트 연동: 감성적인 느낌의 'Gowun Dodum(고운 돋움)'과 세련된 'Outfit' 폰트 사용 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- 스타일시트 연결 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 전체 화면을 감싸는 컨테이너 -->
+    <div class="app-container">
+        
+        <!-- 헤더 영역: 로고와 메인 타이틀 (상단 고정) -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="logo-icon">✨</span>
+                <span class="logo-text">MindFlow</span>
+            </div>
+            <h1 class="main-title">오늘의 하루는 어땠나요?</h1>
+            <p class="subtitle">당신의 소중한 이야기 속에 담긴 감정을 AI와 함께 나누어 보세요.</p>
+        </header>
+
+        <!-- 메인 콘텐츠 영역: 2컬럼 레이아웃 적용을 위한 그리드/플렉스 래퍼 -->
+        <div class="main-content-layout">
+            
+            <!-- 왼쪽 컬럼: 일기 작성 및 AI 분석 결과 -->
+            <div class="left-column">
+                
+                <!-- 일기 작성 카드 -->
+                <main class="diary-card">
+                    <div class="input-header">
+                        <label for="diary-input" class="input-label">오늘의 기록</label>
+                        <span id="char-counter" class="char-counter">0자 입력됨</span>
+                    </div>
+
+                    <!-- 일기 입력창 -->
+                    <textarea 
+                        id="diary-input" 
+                        placeholder="여기에 마음속에 담아둔 이야기를 자유롭게 적어보세요. 아래의 음성 인식 기능을 활용하셔도 좋습니다..."
+                        rows="7"
+                        maxlength="1000"
+                    ></textarea>
+
+                    <!-- 버튼 영역: 총 4개의 버튼으로 구성 (새로 작성, 음성 인식, 분석 요청, 저장) -->
+                    <div class="button-grid-layout">
+                        <!-- 1. 새로 작성 버튼 -->
+                        <button id="reset-btn" class="btn btn-neutral" aria-label="새로 작성하기">
+                            <span class="btn-icon">✏️</span>
+                            <span class="btn-text">새로 작성</span>
+                        </button>
+
+                        <!-- 2. 음성으로 입력하기 버튼 (토글 방식) -->
+                        <button id="voice-btn" class="btn btn-secondary" aria-label="음성으로 입력하기">
+                            <span class="btn-icon">🎙️</span>
+                            <span class="btn-text" id="voice-btn-text">음성 입력</span>
+                            <span class="pulse-ring"></span>
+                        </button>
+
+                        <!-- 3. 분석 요청하기 버튼 -->
+                        <button id="analyze-btn" class="btn btn-primary" aria-label="분석 요청하기">
+                            <span class="btn-icon" id="analyze-icon">✨</span>
+                            <span class="btn-text">분석 요청</span>
+                        </button>
+
+                        <!-- 4. 저장하기 버튼 -->
+                        <button id="save-btn" class="btn btn-success" aria-label="일기 저장하기" disabled>
+                            <span class="btn-icon">💾</span>
+                            <span class="btn-text">일기 저장</span>
+                        </button>
+                    </div>
+                </main>
+
+                <!-- AI 분석 결과 출력 박스 -->
+                <section class="result-section">
+                    <h2 class="result-title">AI의 답변</h2>
+                    <div id="result-box" class="result-box empty">
+                        <!-- 결과 대기 상태 플레이스홀더 -->
+                        <div class="result-placeholder" id="result-placeholder">
+                            <div class="placeholder-icon">🌱</div>
+                            <p class="placeholder-text">여기에 AI의 답변이 표시됩니다. 일기를 작성하고 분석을 요청해보세요.</p>
+                        </div>
+
+                        <!-- 분석 진행 중 로딩 애니메이션 -->
+                        <div class="result-loading" id="result-loading" style="display: none;">
+                            <div class="spinner">
+                                <div class="double-bounce1"></div>
+                                <div class="double-bounce2"></div>
+                            </div>
+                            <p class="loading-text">일기에 담긴 감정의 결을 읽어내는 중입니다...</p>
+                        </div>
+
+                        <!-- 분석 결과 콘텐츠 -->
+                        <div class="result-content" id="result-content" style="display: none;">
+                            <div class="emotion-badge-container">
+                                <span id="emotion-emoji" class="emotion-emoji">🌿</span>
+                                <div class="emotion-info">
+                                    <span class="emotion-label">오늘의 감정</span>
+                                    <span id="emotion-name" class="emotion-name">평온</span>
+                                </div>
+                            </div>
+                            <blockquote id="ai-response-text" class="ai-response-text">
+                                여기에 따뜻한 위로의 편지가 도착합니다.
+                            </blockquote>
+                        </div>
+                    </div>
+                </section>
+                
+            </div> <!-- .left-column 종료 -->
+
+            <!-- 오른쪽 컬럼: 저장된 일기 히스토리 목록 -->
+            <aside class="right-column">
+                <section class="history-section">
+                    <div class="history-header">
+                        <h2 class="history-title">저장된 일기 서랍</h2>
+                        <span id="history-count" class="history-count">0개 보관됨</span>
+                    </div>
+
+                    <!-- 일기 목록 리스트 컨테이너 -->
+                    <div id="history-list" class="history-list">
+                        <!-- 저장된 일기가 없을 때 보이는 비어있음 뷰 -->
+                        <div class="history-empty" id="history-empty">
+                            <div class="empty-icon">📭</div>
+                            <p class="empty-text">아직 보관된 일기가 없습니다.<br>오늘의 감정을 기록하고 보관해보세요.</p>
+                        </div>
+                    </div>
+                </section>
+            </aside> <!-- .right-column 종료 -->
+
+        </div> <!-- .main-content-layout 종료 -->
+
+        <!-- 푸터 영역 -->
+        <footer class="app-footer">
+            <p>© 2026 MindFlow. 모든 일기는 구글 Firebase Firestore 클라우드 내에 안전하게 암호화되어 보관됩니다. 🔒</p>
+        </footer>
+
+    </div> <!-- .app-container 종료 -->
+
+    <!-- Firebase 및 데이터 처리를 위해 모듈식(type="module") 스크립트 형식으로 연결 -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

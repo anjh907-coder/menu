@@ -1,0 +1,766 @@
+/* ==========================================
+   MindFlow - AI 감성 일기 스타일시트
+   디자인 테마: 파스텔톤의 포근하고 따뜻한 감성 테마 (2컬럼 확장판)
+   ========================================== */
+
+/* 1. 디자인 시스템 토큰 & 변수 설정 */
+:root {
+    /* 파스텔 색상 팔레트 */
+    --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #f5ece1 50%, #eef5fc 100%); /* 따뜻한 크림빛 + 하늘빛 그라데이션 */
+    --primary-color: #ffd1b3;        /* 부드러운 파스텔 코랄/살구색 (분석 요청) */
+    --primary-hover: #ffc299;        
+    --secondary-color: #d1f2e5;      /* 포근한 파스텔 민트그린 (음성 입력) */
+    --secondary-hover: #beeada;      
+    --success-color: #e2f0d9;        /* 포근한 파스텔 피스타치오 연두 (저장하기) */
+    --success-hover: #d2e7c4;
+    --neutral-color: #eae6e1;        /* 부드러운 파스텔 웜그레이 (새로 작성) */
+    --neutral-hover: #dad5cf;
+    --text-main: #4a3e3d;            /* 부드러운 다크 브라운 (텍스트 피로도 최소화) */
+    --text-muted: #8c7e7c;           /* 보조용 연한 브라운 */
+    --card-bg: rgba(255, 255, 255, 0.75); /* 반투명 흰색 (글래스모피즘 기반) */
+    --border-color: rgba(243, 226, 213, 0.6); /* 연한 코랄빛 경계선 */
+    --shadow-soft: 0 12px 30px rgba(188, 170, 154, 0.15); /* 부드럽고 가벼운 그림자 */
+    --shadow-hover: 0 16px 40px rgba(188, 170, 154, 0.25); /* 호버 시 입체감을 주는 그림자 */
+    --radius-lg: 24px;               /* 둥글둥글하고 친근한 모서리 */
+    --radius-md: 16px;
+    --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* 우아하고 부드러운 변화 속도 */
+}
+
+/* 2. 전역 스타일 초기화 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Gowun Dodum', 'Outfit', -apple-system, sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* 상단부터 채워지도록 설정 */
+    padding: 40px 20px;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* 3. 전체 레이아웃 컨테이너 */
+.app-container {
+    width: 100%;
+    max-width: 1100px; /* 2컬럼 레이아웃을 위해 너비 대폭 확장 */
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* 4. 헤더 영역 스타일 */
+.app-header {
+    text-align: center;
+    animation: fadeInDown 0.8s ease-out; /* 위에서 아래로 부드럽게 등장 */
+}
+
+.logo-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 6px 16px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(188, 170, 154, 0.08);
+    margin-bottom: 16px;
+}
+
+.logo-icon {
+    font-size: 1.1rem;
+    animation: floating 3s ease-in-out infinite; /* 둥둥 뜨는 애니메이션 */
+}
+
+.logo-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.main-title {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+}
+
+/* 5. 2컬럼 메인 콘텐츠 배치 */
+.main-content-layout {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr; /* 왼쪽(작성창)을 좀 더 크게 배정 */
+    gap: 32px;
+    align-items: start;
+}
+
+/* 왼쪽 영역 컨테이너 */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* 6. 일기 작성 카드 (Left Column 내의 메인 요소) */
+.diary-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px); /* 은은한 유리를 덧댄 듯한 글래스모피즘 효과 */
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: var(--transition-smooth);
+    animation: fadeInUp 0.8s ease-out; /* 아래에서 위로 등장 */
+}
+
+.diary-card:hover {
+    transform: translateY(-4px); /* 호버 시 약간 솟아오름 */
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* 입력창 상단 라벨 및 카운터 */
+.input-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.input-label {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.char-counter {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.5);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* 포근한 일기장 입력창 (Textarea) */
+textarea {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 1.05rem;
+    color: var(--text-main);
+    resize: none; /* 크기 조절 비활성화 */
+    outline: none;
+    transition: var(--transition-smooth);
+    box-shadow: inset 0 2px 4px rgba(188, 170, 154, 0.03);
+}
+
+textarea:focus {
+    background: #ffffff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(255, 209, 179, 0.35); /* 포근한 주황빛 포커스 광채 */
+}
+
+/* 7. 버튼 그리드 레이아웃 (총 4개 배치용) */
+.button-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4개 버튼 동일 가로 비율 */
+    gap: 12px;
+}
+
+/* 공통 버튼 스타일 */
+.btn {
+    position: relative;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 12px;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column; /* 세련되게 아이콘을 위, 텍스트를 아래에 배치 */
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-smooth);
+    overflow: hidden; /* 펄스 링 범위 제한 */
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+}
+
+/* 호버 공통 효과 */
+.btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* 비활성화(disabled) 버튼 스타일 */
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* 1) 새로 작성 버튼 (중립 회색) */
+.btn-neutral {
+    background: var(--neutral-color);
+    color: #433f3c;
+    box-shadow: 0 4px 12px rgba(218, 213, 207, 0.4);
+}
+
+.btn-neutral:hover:not(:disabled) {
+    background: var(--neutral-hover);
+    box-shadow: 0 6px 16px rgba(218, 213, 207, 0.6);
+}
+
+/* 2) 음성 입력 버튼 (보조 민트) */
+.btn-secondary {
+    background: var(--secondary-color);
+    color: #213c31;
+    box-shadow: 0 4px 12px rgba(209, 242, 229, 0.4);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--secondary-hover);
+    box-shadow: 0 6px 16px rgba(209, 242, 229, 0.6);
+}
+
+/* 음성 인식이 켜졌을 때 활성화되는 클래스 */
+.btn-secondary.recording {
+    background: #ffb3b3 !important; /* 러블리한 분홍빛으로 경고/녹음 알림 */
+    color: #5a1a1a !important;
+    animation: heartBeat 1.5s infinite;
+    box-shadow: 0 4px 20px rgba(255, 179, 179, 0.8) !important;
+}
+
+/* 음성 녹음 시 주위에 물결 모양으로 번지는 링 효과 */
+.pulse-ring {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border: 3px solid rgba(255, 179, 179, 0.5);
+    border-radius: var(--radius-md);
+    animation: ripple 1.5s infinite;
+    pointer-events: none;
+}
+
+.btn-secondary.recording .pulse-ring {
+    display: block;
+}
+
+/* 3) 분석 요청 버튼 (주요 살구) */
+.btn-primary {
+    background: var(--primary-color);
+    color: #4a3325;
+    box-shadow: 0 4px 12px rgba(255, 209, 179, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    box-shadow: 0 6px 16px rgba(255, 209, 179, 0.6);
+}
+
+/* 4) 저장하기 버튼 (성공 올리브그린) */
+.btn-success {
+    background: var(--success-color);
+    color: #2f4024;
+    box-shadow: 0 4px 12px rgba(226, 240, 217, 0.4);
+}
+
+.btn-success:hover:not(:disabled) {
+    background: var(--success-hover);
+    box-shadow: 0 6px 16px rgba(226, 240, 217, 0.6);
+}
+
+
+/* 8. AI 답변 및 결과 영역 */
+.result-section {
+    animation: fadeInUp 1s ease-out;
+}
+
+.result-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    padding-left: 8px;
+    border-left: 4px solid var(--primary-color); /* 예쁜 테두리 포인트 */
+}
+
+/* 회색 배경의 안내 박스 */
+.result-box {
+    background: rgba(240, 238, 235, 0.85); /* 부드럽고 차분한 회색조 배경 */
+    border: 1px solid rgba(220, 217, 213, 0.7);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    min-height: 160px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: var(--transition-smooth);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
+}
+
+/* 결과가 채워졌을 때 디자인 */
+.result-box.filled {
+    background: #ffffff; /* 깨끗하고 돋보이게 흰색으로 변형 */
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-soft);
+    transform: scale(1.01);
+}
+
+/* 기본 플레이스홀더 */
+.result-placeholder {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.placeholder-icon {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+    opacity: 0.6;
+    animation: floatLeaf 4s ease-in-out infinite;
+}
+
+/* 9. 로딩 애니메이션 (AI 분석 대기 중) */
+.result-loading {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+/* 우아한 이중 바운스 로딩 스피너 */
+.spinner {
+    width: 44px;
+    height: 44px;
+    position: relative;
+}
+
+.double-bounce1, .double-bounce2 {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    opacity: 0.6;
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: bounce 2.0s infinite ease-in-out;
+}
+
+.double-bounce2 {
+    background-color: var(--secondary-color);
+    animation-delay: -1.0s;
+}
+
+.loading-text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* 10. AI 분석 결과 콘텐츠 구성 */
+.result-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 감정 배지 */
+.emotion-badge-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.emotion-emoji {
+    font-size: 2.8rem;
+    background: #fff0e6;
+    padding: 10px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(255, 209, 179, 0.3);
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.emotion-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.emotion-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.emotion-name {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+/* 부드럽고 따뜻한 인용문 박스 */
+.ai-response-text {
+    font-size: 1.1rem;
+    color: var(--text-main);
+    background: rgba(253, 251, 247, 0.8);
+    border-radius: var(--radius-md);
+    padding: 18px 24px;
+    border-left: 5px solid var(--primary-color);
+    line-height: 1.7;
+    word-break: keep-all; /* 단어 단위 줄바꿈 */
+}
+
+
+/* ==========================================
+   11. 오른쪽 컬럼: 저장된 일기 서랍 (History)
+   ========================================== */
+.right-column {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-soft);
+    max-height: 700px; /* 고정 높이를 주어 스크롤이 작동하도록 설계 */
+    display: flex;
+    flex-direction: column;
+    animation: fadeInUp 0.9s ease-out;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+}
+
+.history-title {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.history-count {
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: var(--text-muted);
+}
+
+/* 스크롤 가능한 일기 리스트 영역 */
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 6px;
+}
+
+/* 아름다운 파스텔 스크롤바 커스텀 */
+.history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: #e2d9d5;
+    border-radius: 10px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: #cfc5c0;
+}
+
+/* 일기가 비었을 때 디자인 */
+.history-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* 목록 개별 일기 아이템 카드 */
+.history-item {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(240, 235, 230, 0.8);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: var(--transition-smooth);
+    animation: slideUpFade 0.4s ease-out forwards;
+}
+
+.history-item:hover {
+    background: #ffffff;
+    border-color: var(--primary-color);
+    transform: translateX(4px); /* 오른쪽으로 살짝 비껴 움직이는 매끄러운 모션 */
+    box-shadow: 0 4px 15px rgba(188, 170, 154, 0.08);
+}
+
+/* 현재 화면에 로드된 일기 표시용 액티브 클래스 */
+.history-item.active {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 15px rgba(255, 209, 179, 0.25);
+    border-left: 5px solid var(--primary-color); /* 포인트 강조선 */
+    padding-left: 12px;
+}
+
+.history-item-emoji {
+    font-size: 2rem;
+    background: #fff6eb;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(188, 170, 154, 0.05);
+}
+
+.history-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-item-date {
+    font-size: 0.75rem;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-muted);
+}
+
+.history-item-preview {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 글자가 길면 ... 처리 */
+    max-width: 180px; /* 말줄임 생성을 위한 가로 폭 제한 */
+}
+
+/* 삭제 버튼 스타일 */
+.history-item-delete {
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0; /* 평소엔 숨겨두었다가 */
+    transition: var(--transition-smooth);
+    padding: 4px;
+    border-radius: 6px;
+}
+
+/* 호버 시 삭제 버튼 살그머니 노출 */
+.history-item:hover .history-item-delete {
+    opacity: 0.5;
+}
+
+.history-item-delete:hover {
+    opacity: 1 !important;
+    background: rgba(255, 179, 179, 0.15);
+}
+
+
+/* 12. 푸터 */
+.app-footer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+}
+
+/* ==========================================
+   KEYFRAMES / ANIMATIONS (애니메이션 효과 정의)
+   ========================================== */
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes floating {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-4px) rotate(5deg); }
+}
+
+@keyframes floatLeaf {
+    0%, 100% { transform: rotate(-5deg) translateY(0); }
+    50% { transform: rotate(10deg) translateY(-5px); }
+}
+
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.03); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.03); }
+    70% { transform: scale(1); }
+}
+
+@keyframes ripple {
+    0% {
+        width: 100%;
+        height: 100%;
+        opacity: 0.8;
+    }
+    100% {
+        width: 115%;
+        height: 135%;
+        opacity: 0;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(0.0); }
+    50% { transform: scale(1.0); }
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN (모바일 기기 화면 대응)
+   ========================================== */
+@media (max-width: 1024px) {
+    /* 타일 레이아웃을 1컬럼 세로 배정으로 바꿈 */
+    .main-content-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .right-column {
+        max-height: 450px; /* 모바일에선 너무 길지 않게 리미트 부여 */
+    }
+
+    .history-item-preview {
+        max-width: 100%; /* 너비 제한 해제 */
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 20px 12px;
+    }
+
+    .main-title {
+        font-size: 1.7rem;
+    }
+
+    .diary-card {
+        padding: 20px;
+    }
+
+    /* 모바일에선 버튼을 격자형 2컬럼 x 2줄로 세팅하여 알맞게 대응 */
+    .button-grid-layout {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 12px 8px;
+        font-size: 0.9rem;
+    }
+
+    .result-box {
+        padding: 20px;
+    }
+
+    .emotion-emoji {
+        font-size: 2.2rem;
+    }
+}
