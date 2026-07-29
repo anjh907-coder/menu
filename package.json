@@ -4,7 +4,7 @@
   "description": "AI 감성 일기 및 실시간 무손실 음성 인식 웹 서비스",
   "main": "app.js",
   "scripts": {
-    "build": "node -e \"const fs = require('fs'); fs.writeFileSync('env.js', `export const env = { GEMINI_API_KEY: '${process.env.GEMINI_API_KEY}' };`); console.log('☁️ Vercel 환경변수 주입을 통해 env.js 파일이 빌드 시점에 성공적으로 자동 생성되었습니다!');\""
+    "build": "node build-env.js"
   },
   "keywords": [],
   "author": "",
