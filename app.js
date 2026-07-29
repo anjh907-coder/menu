@@ -42,7 +42,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // 사용자가 제공해 주신 구글 AI 스튜디오의 실제 Gemini API 키 (AQ로 시작하는 최신형 정품 키)
-const GEMINI_API_KEY = "AQ.Ab8RN6LPW5Z-uiHhkdaNN3yYVS20nmO_c_czzOIY5qcqCP8F7A";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 // 최신 실시간 감정 분석을 고성능/고속으로 처리할 모델 이름 지정 (1.5 Flash)
 const GEMINI_MODEL = "gemini-1.5-flash";
 
