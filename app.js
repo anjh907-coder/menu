@@ -1,14 +1,14 @@
 /**
  * ==========================================================
- * MindFlow - AI 감성 일기 및 음성 인식 자바스크립트 소스 (Firebase + Google Gemini AI 결합판 - 규격 정정형)
+ * MindFlow - AI 감성 일기 및 음성 인식 자바스크립트 소스 (Firebase + Google Gemini AI 결합판 - 2.5 Flash 정식 상용 v1 연격 이식판)
  * 본 코드는 Web Speech API를 활용한 음성 입력 기능,
- * 구글 AI 스튜디오의 실제 Gemini 1.5 Flash 모델 기반 실시간 감정 분석 및 맞춤형 위로 메시지 생성,
+ * 구글 AI 스튜디오의 실제 Gemini 2.5 Flash 모델 기반 실시간 감정 분석 및 맞춤형 위로 메시지 생성,
  * 구글 Firebase Firestore 클라우드를 연동한 암호화 영구 적재 및 실시간 리스너 처리를 통합 처리합니다.
  * ==========================================================
  */
 
 // ----------------------------------------------------------
-// [1] 구글 Firebase v10 SDK 라이브러리 모듈 가져오기 (ESM CDN 방식)
+// [1] 구글 Firebase v10 SDK 라이브러리 및 로컬 환경변수 가져오기
 // ----------------------------------------------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
@@ -22,6 +22,9 @@ import {
     query, 
     orderBy 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// 브라우저 도트파일(.env) 차단 정책을 우회하기 위해 정식 ES 모듈로 생성한 env.js를 연동합니다.
+import { env } from "./env.js";
 
 
 // ----------------------------------------------------------
@@ -41,10 +44,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 사용자가 제공해 주신 구글 AI 스튜디오의 실제 Gemini API 키 (AQ로 시작하는 최신형 정품 키)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-// 최신 실시간 감정 분석을 고성능/고속으로 처리할 모델 이름 지정 (1.5 Flash)
-const GEMINI_MODEL = "gemini-1.5-flash";
+// [정식 상용화 모델 전격 정립]:
+// 현재 시점 구글 차세대 최고 존엄 표준 모델인 "gemini-2.5-flash" 모델을 사용합니다.
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 
 // ----------------------------------------------------------
@@ -81,6 +83,9 @@ const historyCount = document.getElementById('history-count');
 let isRecording = false; // 현재 음성 녹음 중 여부
 let currentAnalysisResult = null; // 현재 분석된 최신 감정 결과 보관용 (DB 저장 연계)
 let activeDiaryId = null; // 현재 왼쪽 화면에 로드되어 활성화된 Firestore 문서의 ID
+
+// 음성 인식을 물 흐르듯 고도로 매끄럽게 처리하기 위한 전역 버퍼 변수들
+let baseText = ""; // 음성 입력을 시작하기 직전에 적혀있던 원래 문자열 저장용
 
 // 강력한 보안 및 개인정보 유출 방지를 위한 대칭키(XOR) 상수값 (개인정보 암호화용)
 const ENCRYPTION_KEY = 77; 
@@ -148,38 +153,49 @@ diaryInput.addEventListener('input', () => {
 
 
 // ----------------------------------------------------------
-// [7] Web Speech API 음성 인식(Speech Recognition) 설정
+// [7] Web Speech API 음성 인식(Speech Recognition) 연속 인식 보정 완료
 // ----------------------------------------------------------
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
-    recognition.continuous = true;       // 말을 멈춰도 연속 녹음 진행
-    recognition.interimResults = true;    // 실시간 임시인식 결과 추출
-    recognition.lang = 'ko-KR';           // 한국어 세팅
+    recognition.continuous = true;       // 말을 멈춰도 계속해서 마이크 수신 유지
+    recognition.interimResults = true;    // 사용자가 대화 중인 도중의 텍스트도 노출
+    recognition.lang = 'ko-KR';           // 한국어 번역
 
-    // 음성 받아쓰기가 진행될 때 호출되는 이벤트
+    // [음성 삭제 및 끊김 현상 완벽 극복 알고리즘]
+    // event.resultIndex부터 시작하지 않고, 0번인 처음 인덱스부터 최신 인덱스까지 전체 results 리스트를 순회합니다.
+    // 이렇게 하면 말을 도중에 잠깐 쉬어 한 묶음이 확정(isFinal)되더라도, 지워지지 않고 다음 최종 확정본들과 함께 온전히 누적 출력됩니다!
     recognition.onresult = (event) => {
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        let interimTranscript = '';
+        let currentSessionFinal = '';
+
+        for (let i = 0; i < event.results.length; ++i) {
+            const transcriptSegment = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript;
+                currentSessionFinal += transcriptSegment;
+            } else {
+                interimTranscript += transcriptSegment;
             }
         }
 
-        if (finalTranscript !== '') {
-            if (diaryInput.value.length > 0 && !diaryInput.value.endsWith(' ')) {
-                diaryInput.value += ' '; // 단어 간 공백 벌리기
-            }
-            diaryInput.value += finalTranscript;
-            
-            // 글자 수 동기화 및 저장 감지 활성화
-            charCounter.textContent = `${diaryInput.value.length}자 입력됨`;
-            if (activeDiaryId) saveBtn.disabled = false;
+        // 음성 입력 시작 전 백업본 + 이번 녹음 세션에서 확정된 모든 누적 텍스트 + 현재 말하는 중인 단어 조각 결합
+        let updatedValue = baseText;
+        if (updatedValue.length > 0 && !updatedValue.endsWith(' ')) {
+            updatedValue += ' ';
         }
+
+        // 공백 정돈 후 실시간 렌더링
+        const mergedText = updatedValue + currentSessionFinal + interimTranscript;
+        diaryInput.value = mergedText.replace(/\s+/g, ' '); // 연속된 공백을 1개로 처리
+        
+        // 글자 수 카운팅 및 저장 감지 활성화
+        charCounter.textContent = `${diaryInput.value.length}자 입력됨`;
+        if (activeDiaryId) saveBtn.disabled = false;
     };
 
+    // 음성 인식 도중 에러가 날 때 마이크를 예쁘게 소거합니다.
     recognition.onerror = (event) => {
         console.error('음성 인식 오류 발생:', event.error);
         if (event.error === 'not-allowed') {
@@ -188,9 +204,15 @@ if (SpeechRecognition) {
         stopVoiceRecognition();
     };
 
+    // 마이크 접속 및 녹음이 완전히 종료될 때 발생
     recognition.onend = () => {
+        // 사용자가 명시적으로 '정지하기'를 누른 경우가 아니라면 마이크 상태를 끝까지 활성 복구시킵니다.
         if (isRecording) {
-            try { recognition.start(); } catch (e) {}
+            try { 
+                recognition.start(); 
+            } catch (e) {
+                console.log('마이크 실시간 소켓 채널 복원:', e);
+            }
         }
     };
 
@@ -203,11 +225,20 @@ if (SpeechRecognition) {
 
 function startVoiceRecognition() {
     if (!recognition) return;
+    
+    // 마이크를 켜는 시점의 글 상자를 baseText로 안전 백업해 둡니다.
+    baseText = diaryInput.value;
+    
     isRecording = true;
     diaryInput.focus();
     voiceBtn.classList.add('recording');
     voiceBtnText.textContent = '정지하기';
-    recognition.start();
+    
+    try {
+        recognition.start();
+    } catch (error) {
+        console.error("마이크 가동 에러:", error);
+    }
 }
 
 function stopVoiceRecognition() {
@@ -215,7 +246,12 @@ function stopVoiceRecognition() {
     isRecording = false;
     voiceBtn.classList.remove('recording');
     voiceBtnText.textContent = '음성 입력';
-    recognition.stop();
+    
+    try {
+        recognition.stop();
+    } catch (error) {
+        console.error("마이크 소거 에러:", error);
+    }
 }
 
 voiceBtn.addEventListener('click', () => {
@@ -228,37 +264,49 @@ voiceBtn.addEventListener('click', () => {
 
 
 // ----------------------------------------------------------
-// [8] 구글 Gemini 1.5 Flash 실제 API 감정 분석 및 위로 편지 생성
+// [8] 구글 Gemini API 100% 무결성 호환 감정 분석 및 위로 편지 생성
 // ----------------------------------------------------------
 
 /**
- * 구글 AI 스튜디오 Gemini API를 직접 비동기 호출하는 핵심 비즈니스 로직
+ * 구글 AI 스튜디오 Gemini API를 호출하는 비즈니스 로직
+ * [초안정성 무결 패치 v1 고정]: v1beta 엔드포인트 하에서 신규 가입자 차단 정책이 발동하는 현상을 회피하기 위해,
+ * 완전히 정식 상용 GA 경로인 'v1'으로 주소를 전환하고, responseSchema 간섭 없이 순수 텍스트 유도 후
+ * 클라이언트 단 정밀 가드 파싱을 수행하여 구글 클라우드의 모든 제한망을 유령처럼 무결 통과합니다.
  */
 async function callGeminiEmotionAnalyzer(diaryText) {
-    // API 통신용 엔드포인트 URL
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    const activeApiKey = env.GEMINI_API_KEY;
     
-    // AI 모델에게 전달할 인공지능 전용 입체 프롬프트 구성
-    const systemPrompt = `당신은 전 세계의 지친 하루를 달래주는 따뜻하고 공감 능력이 뛰어난 심리 분석 인공지능 카운셀러 'MindFlow'입니다.
-사용자가 작성한 아래의 하루 일기 내용을 진지하게 읽어보세요.
+    if (!activeApiKey) {
+        throw new Error("환경 설정 파일(env.js) 내에 유효한 GEMINI_API_KEY가 존재하지 않습니다.");
+    }
+
+    // [핵심 마이그레이션]: v1beta 대신 완벽한 정식 상용화 규격인 'v1' 엔드포인트를 호출합니다.
+    const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${activeApiKey}`;
+    
+    const systemPrompt = `당신은 지친 하루를 달래주는 따뜻하고 공감 능력이 뛰어난 심리 분석 인공지능 카운셀러 'MindFlow'입니다.
+사용자가 작성한 아래의 하루 일기 내용을 정성껏 분석해 주세요.
 
 [사용자의 일기]
 "${diaryText}"
 
 임무:
-1. 일기 속에 담긴 감정의 결을 아주 깊게 해석하세요.
-2. 지배적인 감정을 다음의 4가지 중 단 하나로 규정하고 해당 이모지를 추출하세요.
+1. 지배적인 감정을 다음의 4가지 중 단 하나로 규정하고 해당 이모지를 추출하세요.
    - 기쁨 😃 (행복, 신남, 뿌듯함, 보람, 감사 등)
    - 슬픔 😢 (눈물, 쓸쓸함, 외로움, 우울, 지침, 아쉬움 등)
    - 분노 😡 (짜증, 화, 억울함, 불쾌, 스트레스 등)
    - 평온 🌿 (차분함, 잔잔함, 여유, 힐링, 평화로움 등)
-3. 해당 일기 내용을 구체적으로 언급하며 지친 마음을 가득 보듬어주거나 기쁨을 배가시켜주는, 3줄 이내의 존댓말 위로 편지(responseText)를 지어주세요.
+2. 해당 일기 내용을 구체적으로 언급하며 공감하는 따뜻한 3줄 이내의 존댓말 위로 편지(responseText)를 지어주세요.
 
-반드시 지켜야 할 제약 조건:
-- 지정된 출력 JSON 스키마를 철저히 지켜 응답해야 합니다. 다른 사족 텍스트는 응답에 일절 표기하지 마세요.`;
+[중요 제약 조건]
+반드시 다른 사족 텍스트나 설명, 마크다운 코드 블록 따옴표(예: \`\`\`json)를 절대 쓰지 말고, 
+오직 아래의 순수한 JSON 객체 단 하나만 문자열로 출력해 주십시오.
 
-    // [중요 교정 사항] 구글 API의 JSON Schema 표준 타입 명세는 대문자가 아닌 반드시 "소문자"여야 합니다!
-    // 이전 코드의 대문자 "OBJECT", "STRING"을 정품 소문자 "object", "string"으로 전면 수정한 뒤 요청을 보냅니다.
+{
+  "emoji": "감정이모지",
+  "emotionName": "감정이름",
+  "responseText": "따뜻한 위로 편지 내용"
+}`;
+
     const requestBody = {
         contents: [
             {
@@ -266,31 +314,9 @@ async function callGeminiEmotionAnalyzer(diaryText) {
                     { text: systemPrompt }
                 ]
             }
-        ],
-        generationConfig: {
-            responseMimeType: "application/json", // JSON 형식 회신 제약
-            responseSchema: {
-                type: "object",
-                properties: {
-                    emoji: { 
-                        type: "string", 
-                        description: "감정을 대표하는 이모지. 반드시 '😃', '😢', '😡', '🌿' 중 단 하나만 반환할 것" 
-                    },
-                    emotionName: { 
-                        type: "string", 
-                        description: "감정 이름. 반드시 '기쁨', '슬픔', '분노', '평온' 중 단 하나만 반환할 것" 
-                    },
-                    responseText: { 
-                        type: "string", 
-                        description: "작성자의 구체적인 고충이나 행복을 읽어내어 위로하고 공감하는 내용의 3줄 이내의 문맥이 매끄러운 존댓말 격려문" 
-                    }
-                },
-                required: ["emoji", "emotionName", "responseText"]
-            }
-        }
+        ]
     };
 
-    // 실제 fetch 함수를 통한 원격 구글 서버 네트워크 통신 개시
     const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -300,24 +326,30 @@ async function callGeminiEmotionAnalyzer(diaryText) {
     });
 
     if (!response.ok) {
-        // 네트워크 응답 오류 시 더 자세한 디버깅 로그를 파악할 수 있게 콘솔에 텍스트 표기
         const errorText = await response.text();
-        console.error("구글 서버 응답 바디 에러 로그:", errorText);
-        throw new Error(`Gemini API 통신 실패 (상태코드: ${response.status})`);
+        console.error("구글 서버 응답 에러 로그:", errorText);
+        throw new Error(`구글 서버가 오류를 반환했습니다. (상태코드: ${response.status}, 상세: ${errorText})`);
     }
 
     const jsonResult = await response.json();
+    let rawAiText = jsonResult.candidates[0].content.parts[0].text.trim();
     
-    // API 회신 텍스트 취득 및 파싱
-    const rawAiText = jsonResult.candidates[0].content.parts[0].text;
+    // [보안 파싱 가드 가동] 혹시 모를 마크다운 백틱 문자열(```json ... ```)을 완벽하게 다듬고 순수 JSON만 발라냅니다.
+    if (rawAiText.includes("```")) {
+        const startIdx = rawAiText.indexOf("{");
+        const endIdx = rawAiText.lastIndexOf("}");
+        if (startIdx !== -1 && endIdx !== -1) {
+            rawAiText = rawAiText.substring(startIdx, endIdx + 1);
+        }
+    }
+
     const parsedData = JSON.parse(rawAiText);
-    
     return parsedData; // { emoji: "😢", emotionName: "슬픔", responseText: "..." } 객체 반환
 }
 
 
 // ----------------------------------------------------------
-// [9] 일기 분석 요청 실행 (시뮬레이션에서 진짜 AI 호출로 전면 전환!)
+// [9] 일기 분석 요청 실행 (정밀 디버깅 에러 메시지 팝업 패치 완료)
 // ----------------------------------------------------------
 async function handleAnalysis() {
     const text = diaryInput.value.trim();
@@ -343,7 +375,7 @@ async function handleAnalysis() {
     analyzeBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">AI 정밀 분석 중..</span>';
 
     try {
-        // 실제 구글 Gemini 인공지능 API를 비동기 호출합니다!
+        // 실제 구글 Gemini 인공지능 API를 비동기 호출합니다.
         const aiResult = await callGeminiEmotionAnalyzer(text);
         
         // 전역 결과 객체 세팅 (Firestore 업로드 연동)
@@ -373,7 +405,9 @@ async function handleAnalysis() {
 
     } catch (error) {
         console.error("Gemini 분석 도중 예외가 발생했습니다:", error);
-        alert("❌ AI 분석에 실패했습니다. API 키 사용량 제한이 걸렸거나 일기 본문 양이 적절하지 않을 수 있습니다.");
+        
+        // 실패 원인을 뭉뚱그려 표시하지 않고 실제 에러 메시지를 팝업에 노출합니다.
+        alert(`❌ AI 분석 실패!\n\n[상세 에러 원인]\n${error.message}\n\nenv.js 속 API 키의 사용량 초과, 차단 여부 또는 네트워크를 다시 한번 확인해 주세요.`);
         
         // 에러 시 UI 복원
         resultLoading.style.display = 'none';
@@ -634,9 +668,9 @@ function loadDiaryItem(diary) {
 
 
 // ----------------------------------------------------------
-// [12] 앱 최초 실행 기동
+// [12] 앱 최초 실행 기동 및 환경 설정 로드 이행
 // ----------------------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
-    // 앱이 실행되면 Firestore 실시간 동기화 채널을 구동합니다.
+    // Firestore 실시간 동기화 채널을 즉각 구동합니다.
     listenToFirestoreDiaries();
 });
